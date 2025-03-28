@@ -7,6 +7,7 @@ import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { use } from "react";
 import Dice from 'react-dice-roll';
+import ReactMarkdown from "react-markdown";
 
 function Spinner() {
 	return (
@@ -71,7 +72,7 @@ export default function Adventure(props: {
 										<div className="flex flex-col gap-1">
 											Dungeon Master:
 											<hr />
-											{entry.response}
+											<ReactMarkdown>{entry.response}</ReactMarkdown>
 										</div>
 									</div>
 								);

@@ -2,8 +2,15 @@ import { v } from "convex/values";
 import { action, internalQuery, mutation, query } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import OpenAI from "openai";
+import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 const openai = new OpenAI();
+
+const chatModel = new ChatOpenAI({
+  modelName: "gpt-4o",
+  openAIApiKey: process.env.OPENAI_API_KEY, // Ensure this is set in your environment
+});
 
 export const getEntriesForAdventure = internalQuery({
   args: {
@@ -23,31 +30,34 @@ export const handlePlayerAction = action({
     adventureId: v.id("adventures"),
   },
   handler: async (ctx, args) => {
+    // Fetch previous entries for the adventure
     const entries = await ctx.runQuery(internal.chat.getEntriesForAdventure, {
       adventureId: args.adventureId,
     });
 
-    const prefix = entries
-      .map((entry) => {
-        return `${entry.input}\n\n${entry.response}`;
-      })
-      .join("\n\n");
+    // Construct the conversation history
+    const messages = [
+      new SystemMessage("You are a helpful assistant in a text-based adventure game."),
+      ...entries.flatMap((entry) => [
+        new HumanMessage(entry.input), // User's input
+        new SystemMessage(entry.response), // AI's response
+      ]),
+      new HumanMessage(args.message), // Add the user's current message
+    ];
 
-    const userPrompt = args.message;
+    // Generate a response using LangChain
+    const completion = await chatModel.call(messages);
 
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: `${prefix}${userPrompt}` }],
-      model: "gpt-3.5-turbo",
-    });
-
-    const input = userPrompt;
-    const response = completion.choices[0].message.content ?? "";
+    const input = args.message;
+    const response = completion.text ?? "";
 
     await ctx.runMutation(api.chat.insertEntry, {
       input,
       response,
       adventureId: args.adventureId,
     });
+
+    console.log("Generated response:", response);
   },
 });
 
