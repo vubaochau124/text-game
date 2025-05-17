@@ -43,47 +43,36 @@ export const setupAdventureEntries = internalAction({
 			throw new Error("Adventure not found");
 		}
 
-		const input = `
-			You are a dungeon master who is going to run a text based adventure RPG for me.
-			You will need to setup an adventure for me which will involve having
-			me fight random enemy encounters, reward me with loot after killing enemies,
-			give me goals and quests, and finally let me know when I finish the overall adventure.
+		const input = `You are a dungeon master who will run a text-based adventure RPG. The adventure involves random enemy encounters, loot rewards, goals and quests, and a clear end upon completion.
 
-			When I am fighting enemies, please ask me to roll 6 sided dices, with a 1 being the worst outcome
-			of the scenario, and a 6 being the best outcome of the scenario.  Do not roll the dice for me,
-			I as the player should input this and you need to describe the outcome with my input.
+During combat, prompt the player to roll a six-sided die (1 = worst, 6 = best). The outcome depends solely on their roll. Do not roll for the player; await their input and describe the result, track enemy's health.
 
-			During this entire time, please track my health points which will start at 10, 
-			my character class which is a ${adventure.characterClass}, 
-			and my inventory which will start with a weapon and a health potion.
+Track the player's health (starting at 10), character class (${adventure.characterClass}), and inventory (starting weapon and health potion). Max health is 10. Players can attack, heal, and use items.
 
-			My starting health will be 10, and I will be able to attack enemies, 
-			heal myself, and use items to help me in battle. 
-			I will have a starting inventory matching my character class, 
-			which must include a weaponwith base damage of 1: 
-			- a rusty sword that does 1 damage if ${adventure.characterClass} is a warrior,
-			- a wooden set of bow and arrows that does 1 damage if ${adventure.characterClass} is an archer,
-			- a small staff that does 1 damage if ${adventure.characterClass} is a wizard,
-			and a health potion that heals for 3.
+Starting inventory based on class (must include 1 damage weapon):
+- Warrior: rusty sword (1 damage)
+- Archer: wooden bow and arrows (1 damage)
+- Wizard: small staff (1 damage)
+Plus a health potion (heals 3). Maintain inventory consistency.
 
-			The adventure should have the following features:
-			- Random enemy encounters
-			- Random loot drops
-			- The dungeon has 5 levels
-			- each level has a boss
+Adventure features:
+- Random enemy encounters
+- Random loot drops
+- Single-level dungeon with 3 rooms
+- Defeat the final boss to win
 
-			Given this scenario, please ask the player for thier initial actions.
+Begin by asking the player for their initial action. Do not offer choices unless requested. Match the adventure's style and tone to the player. End the game upon completion or death.
 
-			Don't give the player the choices the choose unless they ask for suggestions.
+Given this scenario, please ask the player for their initial actions.
+`;
 
-			PLEASE MAKE SURE TO NEVER ROLL FOR THE PLAYER.  YOU SHOULD ALWAYS ASK THE PLAYER FOR HIS NEXT STEPS.
-			`;
 		const completion = await openai.chat.completions.create({
 			model: 'gpt-4o',
 			messages: [
 				{ role: 'user', content: input },
 			],
 		});
+
 		const response = completion.choices[0].message.content ?? "";
 
 		await ctx.runMutation(api.chat.insertEntry, {

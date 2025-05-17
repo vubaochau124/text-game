@@ -1,15 +1,12 @@
 import { v } from "convex/values";
 import { action, internalQuery, mutation, query } from "./_generated/server";
 import { api, internal } from "./_generated/api";
-import OpenAI from "openai";
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
-const openai = new OpenAI();
-
 const chatModel = new ChatOpenAI({
   modelName: "gpt-4o",
-  openAIApiKey: process.env.OPENAI_API_KEY, // Ensure this is set in your environment
+  openAIApiKey: process.env.OPENAI_API_KEY,
 });
 
 export const getEntriesForAdventure = internalQuery({
@@ -30,22 +27,19 @@ export const handlePlayerAction = action({
     adventureId: v.id("adventures"),
   },
   handler: async (ctx, args) => {
-    // Fetch previous entries for the adventure
     const entries = await ctx.runQuery(internal.chat.getEntriesForAdventure, {
       adventureId: args.adventureId,
     });
 
-    // Construct the conversation history
     const messages = [
       new SystemMessage("You are a helpful assistant in a text-based adventure game."),
       ...entries.flatMap((entry) => [
-        new HumanMessage(entry.input), // User's input
-        new SystemMessage(entry.response), // AI's response
+        new HumanMessage(entry.input),
+        new SystemMessage(entry.response), 
       ]),
-      new HumanMessage(args.message), // Add the user's current message
+      new HumanMessage(args.message),
     ];
 
-    // Generate a response using LangChain
     const completion = await chatModel.call(messages);
 
     const input = args.message;
